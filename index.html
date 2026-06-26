@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Scramble Arcade 🎮</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e1e2f 0%, #111119 100%);
+            color: #ffffff;
+        }
+
+        .game-card {
+            background: #252538;
+            padding: 30px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            border: 1px solid #3a3a55;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #00ffcc;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .scrambled-word {
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 5px;
+            margin: 25px 0;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255,204,0,0.3);
+        }
+
+        .hint-box {
+            font-size: 1rem;
+            color: #aaa;
+            margin-bottom: 20px;
+            background: #1a1a26;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #00ffcc;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            outline: none;
+            border: 2px solid #3a3a55;
+            background: #1a1a26;
+            color: #fff;
+            border-radius: 10px;
+            text-align: center;
+            transition: 0.3s;
+            text-transform: lowercase;
+        }
+
+        input:focus {
+            border-color: #00ffcc;
+            box-shadow: 0 0 15px rgba(0,255,204,0.2);
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-transform: uppercase;
+        }
+
+        .btn-refresh {
+            background: #4e4e6a;
+            color: white;
+        }
+
+        .btn-refresh:hover {
+            background: #5f5f82;
+        }
+
+        .btn-check {
+            background: #00ffcc;
+            color: #111119;
+        }
+
+        .btn-check:hover {
+            background: #00cc99;
+            transform: translateY(-2px);
+        }
+
+        .message {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            min-height: 24px;
+        }
+        
+        .score-board {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-card">
+        <h1>Word Scramble</h1>
+        <div class="scrambled-word" id="scrambledWord">-----</div>
+        <div class="hint-box">💡 Hint: <span id="hintText">...</span></div>
+        
+        <input type="text" id="userInput" placeholder="Guess the correct word!" autocomplete="off">
+        
+        <div class="actions">
+            <button class="btn-refresh" id="refreshBtn">🔄 Skip</button>
+            <button class="btn-check" id="checkBtn">⚡ Check</button>
+        </div>
+
+        <div class="message" id="message"></div>
+        <div class="score-board">Score: <span id="score">0</span></div>
+    </div>
+
+    <script>
+        // Database of words, hints, and correct solutions
+        const wordList = [
+            { word: "javascript", hint: "The programming language of the web" },
+            { word: "html", hint: "Markup language used to structure web content" },
+            { word: "canvas", hint: "HTML element used to draw graphics via scripting" },
+            { word: "css", hint: "Style sheet language used for designing web pages" },
+            { word: "developer", hint: "A person who creates computer software or apps" },
+            { word: "browser", hint: "Software program used to locate and display web pages" },
+            { word: "cookie", hint: "Small piece of data stored on the user's computer" },
+            { word: "matrix", hint: "A rectangular array of numbers, symbols, or expressions" },
+            { word: "server", hint: "A computer that provides data to other computers" }
+        ];
+
+        let currentWord = "";
+        let score = 0;
+
+        const scrambledWordEl = document.getElementById("scrambledWord");
+        const hintTextEl = document.getElementById("hintText");
+        const userInputEl = document.getElementById("userInput");
+        const refreshBtn = document.getElementById("refreshBtn");
+        const checkBtn = document.getElementById("checkBtn");
+        const messageEl = document.getElementById("message");
+        const scoreEl = document.getElementById("score");
+
+        // Function to select and setup a new word
+        function initGame() {
+            // Pick random object from array
+            let randomObj = wordList[Math.floor(Math.random() * wordList.length)];
+            currentWord = randomObj.word;
+            
+            // Scramble the word letters
+            let wordArray = currentWord.split("");
+            for (let i = wordArray.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [wordArray[i], wordArray[j]] = [wordArray[j], wordArray[i]];
+            }
+            
+            // Prevent the scrambled word from accidentally matching the original word
+            if(wordArray.join("") === currentWord) {
+                return initGame();
+            }
+
+            // Update DOM elements
+            scrambledWordEl.innerText = wordArray.join("");
+            hintTextEl.innerText = randomObj.hint;
+            userInputEl.value = "";
+            messageEl.innerText = "";
+            userInputEl.focus();
+        }
+
+        // Logic to verify the user's guess
+        function checkWord() {
+            let userWord = userInputEl.value.toLowerCase().trim();
+            
+            if(!userWord) {
+                messageEl.style.color = "#ff4a4a";
+                messageEl.innerText = "Please enter a word first!";
+                return;
+            }
+
+            if(userWord !== currentWord) {
+                messageEl.style.color = "#ff4a4a";
+                messageEl.innerText = `❌ Oops! "${userWord}" is not correct. Try again!`;
+                return;
+            }
+
+            // Success state
+            messageEl.style.color = "#00ffcc";
+            messageEl.innerText = `🎉 Correct! The word was indeed ${currentWord.toUpperCase()}!`;
+            score++;
+            scoreEl.innerText = score;
+            
+            // Load next puzzle after a short pause
+            setTimeout(initGame, 1500);
+        }
+
+        // Event Listeners
+        refreshBtn.addEventListener("click", initGame);
+        checkBtn.addEventListener("click", checkWord);
+        userInputEl.addEventListener("keyup", (e) => {
+            if(e.key === "Enter") checkWord();
+        });
+
+        // Fire up the game loop on window load
+        initGame();
+    </script>
+</body>
+</html>
